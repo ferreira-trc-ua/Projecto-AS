@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Hotel } from '../App';
+import { Hotel, Review } from '../App';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { MapPin, Star, Search } from 'lucide-react';
+import { MapPin, Star, Search, MessageSquare } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { HotelReviewsDialog } from './HotelReviewsDialog';
 
 interface HotelSearchPageProps {
   hotels: Hotel[];
+  reviews: Review[];
   onSelectHotel: (hotel: Hotel) => void;
   onBack: () => void;
 }
@@ -21,11 +23,12 @@ const HOTEL_IMAGES = [
   'https://images.unsplash.com/photo-1682197289255-b45c7311fcfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXRzJTIwcGxheWZ1bHxlbnwxfHx8fDE3NjM1MDMxOTN8MA&ixlib=rb-4.1.0&q=80&w=1080',
 ];
 
-export function HotelSearchPage({ hotels, onSelectHotel, onBack }: HotelSearchPageProps) {
+export function HotelSearchPage({ hotels, reviews, onSelectHotel, onBack }: HotelSearchPageProps) {
   const [location, setLocation] = useState('');
   const [petType, setPetType] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+  const [selectedHotelForReviews, setSelectedHotelForReviews] = useState<Hotel | null>(null);
 
   const filteredHotels = hotels.filter((hotel) => {
     if (location && !hotel.address.toLowerCase().includes(location.toLowerCase())) {
@@ -33,6 +36,16 @@ export function HotelSearchPage({ hotels, onSelectHotel, onBack }: HotelSearchPa
     }
     return true;
   });
+
+  const getHotelReviews = (hotelId: string) => {
+    return reviews.filter(r => r.hotelId === hotelId);
+  };
+
+  const getAverageRating = (hotelId: string) => {
+    const hotelReviews = getHotelReviews(hotelId);
+    if (hotelReviews.length === 0) return hotel.rating;
+    return Number((hotelReviews.reduce((sum, r) => sum + r.rating, 0) / hotelReviews.length).toFixed(1));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,44 +117,60 @@ export function HotelSearchPage({ hotels, onSelectHotel, onBack }: HotelSearchPa
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredHotels.map((hotel, index) => (
-            <Card key={hotel.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="relative h-48">
-                <ImageWithFallback
-                  src={HOTEL_IMAGES[index % HOTEL_IMAGES.length]}
-                  alt={hotel.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm">{hotel.rating}</span>
-                </div>
-              </div>
-              
-              <CardContent className="p-4">
-                <h3 className="text-gray-900 mb-1">{hotel.name}</h3>
-                
-                <div className="flex items-start gap-1 text-sm text-gray-500 mb-3">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>{hotel.address.split('-')[1]?.trim() || hotel.address}</span>
-                </div>
-                
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {hotel.description}
-                </p>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-indigo-600">€16</span>
-                    <span className="text-sm text-gray-500">/noite</span>
+          {filteredHotels.map((hotel, index) => {
+            const hotelReviews = getHotelReviews(hotel.id);
+            const avgRating = getAverageRating(hotel.id);
+            
+            return (
+              <Card key={hotel.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative h-48">
+                  <ImageWithFallback
+                    src={HOTEL_IMAGES[index % HOTEL_IMAGES.length]}
+                    alt={hotel.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
+                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    <span className="text-sm">{avgRating}</span>
                   </div>
-                  <Button onClick={() => onSelectHotel(hotel)} size="sm">
-                    Reservar Agora
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                
+                <CardContent className="p-4">
+                  <h3 className="text-gray-900 mb-1">{hotel.name}</h3>
+                  
+                  <div className="flex items-start gap-1 text-sm text-gray-500 mb-3">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{hotel.address.split('-')[1]?.trim() || hotel.address}</span>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                    {hotel.description}
+                  </p>
+
+                  {/* Reviews Preview */}
+                  <button
+                    onClick={() => setSelectedHotelForReviews(hotel)}
+                    className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 mb-4"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>
+                      {hotelReviews.length} {hotelReviews.length === 1 ? 'avaliação' : 'avaliações'}
+                    </span>
+                  </button>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-indigo-600">€16</span>
+                      <span className="text-sm text-gray-500">/noite</span>
+                    </div>
+                    <Button onClick={() => onSelectHotel(hotel)} size="sm">
+                      Reservar Agora
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {filteredHotels.length === 0 && (
@@ -156,6 +185,16 @@ export function HotelSearchPage({ hotels, onSelectHotel, onBack }: HotelSearchPa
           </Button>
         </div>
       </div>
+
+      {/* Reviews Dialog */}
+      {selectedHotelForReviews && (
+        <HotelReviewsDialog
+          isOpen={!!selectedHotelForReviews}
+          onClose={() => setSelectedHotelForReviews(null)}
+          hotelName={selectedHotelForReviews.name}
+          reviews={getHotelReviews(selectedHotelForReviews.id)}
+        />
+      )}
     </div>
   );
 }

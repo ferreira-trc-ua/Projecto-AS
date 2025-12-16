@@ -13,9 +13,13 @@ interface BookingListProps {
   pets: Pet[];
   hotels: Hotel[];
   userType: 'owner' | 'hotel';
+  reviews?: Review[];
+  onAddReview?: (review: Review) => void;
+  currentUserId?: string;
+  currentUserName?: string;
 }
 
-export function BookingList({ bookings, pets, hotels, userType }: BookingListProps) {
+export function BookingList({ bookings, pets, hotels, userType, reviews = [], onAddReview, currentUserId, currentUserName }: BookingListProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [showChatDialog, setShowChatDialog] = useState(false);
@@ -42,8 +46,19 @@ export function BookingList({ bookings, pets, hotels, userType }: BookingListPro
   };
 
   const handleSubmitReview = (rating: number, comment: string) => {
-    console.log('Review submitted:', { rating, comment });
-    // Aqui você adicionaria a lógica para salvar a review
+    if (selectedBooking && onAddReview && currentUserId && currentUserName) {
+      const newReview: Review = {
+        id: `review-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        bookingId: selectedBooking.id,
+        ownerId: currentUserId,
+        hotelId: selectedBooking.hotelId,
+        rating,
+        comment,
+        date: new Date().toISOString(),
+        ownerName: currentUserName,
+      };
+      onAddReview(newReview);
+    }
     setShowReviewDialog(false);
     setSelectedBooking(null);
   };

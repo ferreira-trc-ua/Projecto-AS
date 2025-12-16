@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Pet, Booking, Hotel, MOCK_EXISTING_USER_DATA } from '../App';
+import { User, Pet, Booking, Hotel, Review, MOCK_EXISTING_USER_DATA } from '../App';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { PawPrint, LogOut, Plus, Calendar } from 'lucide-react';
@@ -12,6 +12,8 @@ import { BookingDialog } from './BookingDialog';
 interface OwnerDashboardProps {
   user: User;
   onLogout: () => void;
+  reviews: Review[];
+  onAddReview: (review: Review) => void;
 }
 
 // Mock hotels data - in real app, this would come from database
@@ -26,8 +28,6 @@ const MOCK_HOTELS: Hotel[] = [
     rating: 4.8,
     capacity: 20,
     currentOccupancy: 12,
-    capacity: 20,
-    currentOccupancy: 12,
   },
   {
     id: 'h2',
@@ -37,8 +37,6 @@ const MOCK_HOTELS: Hotel[] = [
     phone: '+351 22 987 6543',
     description: 'Ambiente familiar com grande área verde',
     rating: 4.6,
-    capacity: 15,
-    currentOccupancy: 8,
     capacity: 15,
     currentOccupancy: 8,
   },
@@ -52,8 +50,6 @@ const MOCK_HOTELS: Hotel[] = [
     rating: 4.9,
     capacity: 25,
     currentOccupancy: 18,
-    capacity: 25,
-    currentOccupancy: 18,
   },
   {
     id: 'h4',
@@ -65,12 +61,10 @@ const MOCK_HOTELS: Hotel[] = [
     rating: 4.7,
     capacity: 10,
     currentOccupancy: 5,
-    capacity: 10,
-    currentOccupancy: 5,
   },
 ];
 
-export function OwnerDashboard({ user, onLogout }: OwnerDashboardProps) {
+export function OwnerDashboard({ user, onLogout, reviews, onAddReview }: OwnerDashboardProps) {
   const [activeTab, setActiveTab] = useState('pets');
   // Inicializa com dados mock se for usuário existente (login), senão inicia vazio (registro)
   const [pets, setPets] = useState<Pet[]>(
@@ -121,6 +115,7 @@ export function OwnerDashboard({ user, onLogout }: OwnerDashboardProps) {
     return (
       <HotelSearchPage
         hotels={MOCK_HOTELS}
+        reviews={reviews}
         onSelectHotel={handleSelectHotel}
         onBack={() => setShowHotelSearch(false)}
       />
@@ -202,8 +197,11 @@ export function OwnerDashboard({ user, onLogout }: OwnerDashboardProps) {
               bookings={bookings}
               pets={pets}
               hotels={MOCK_HOTELS}
-              hotels={MOCK_HOTELS}
               userType="owner"
+              reviews={reviews}
+              onAddReview={onAddReview}
+              currentUserId={user.id}
+              currentUserName={user.name}
             />
           </TabsContent>
         </Tabs>

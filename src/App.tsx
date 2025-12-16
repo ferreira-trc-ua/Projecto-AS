@@ -312,6 +312,7 @@ export const MOCK_ACTIVITY_REPORTS: ActivityReport[] = [
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
@@ -321,12 +322,16 @@ function App() {
     setCurrentUser(null);
   };
 
+  const handleAddReview = (review: Review) => {
+    setReviews([review, ...reviews]);
+  };
+
   if (!currentUser) {
     return <Login onLogin={handleLogin} />;
   }
 
   if (currentUser.type === 'owner') {
-    return <OwnerDashboard user={currentUser} onLogout={handleLogout} />;
+    return <OwnerDashboard user={currentUser} onLogout={handleLogout} reviews={reviews} onAddReview={handleAddReview} />;
   }
 
   if (currentUser.type === 'hotel') {
